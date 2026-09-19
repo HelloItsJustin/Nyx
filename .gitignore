@@ -1,0 +1,16 @@
+# Local credentials and generated reports must never enter source control.
+.env
+.env.local
+.env.*.local
+backend/reports/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+dashboard/dist/
+dashboard/node_modules/
+cli/node_modules/
+.venv/
+.idea/
+.vscode/
+*.log
+coverage/
