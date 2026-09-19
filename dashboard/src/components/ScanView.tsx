@@ -134,9 +134,9 @@ function ProceedBanner({
       }}
     >
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+      initial={{ y: 20, scale: 0.95 }}
+      animate={{ y: 0, scale: 1 }}
+      exit={{ y: 10, scale: 0.95 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="proceed-banner"
       style={{
@@ -168,11 +168,11 @@ function ProceedBanner({
           borderRadius: 12,
           border: `1.5px solid ${color}`,
           background: color,
-          color: 'white',
+          color: '#FFFFFF',
           fontSize: 14,
           fontWeight: 700,
           cursor: isProceeding ? 'wait' : 'pointer',
-          opacity: isProceeding ? 0.72 : 1,
+          opacity: 1,
           fontFamily: 'Inter, sans-serif',
           boxShadow: `0 4px 20px ${color}40`,
           transition: 'all 0.2s ease',
