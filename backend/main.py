@@ -262,7 +262,10 @@ def _finforge_cache_matches_snapshot(scan_dir: str, findings: List[Dict[str, Any
         if line_number < 1 or line_number > len(lines):
             return False
         raw_secret = str(finding.get("raw_secret") or "")
-        if raw_secret and raw_secret not in path.read_text(encoding="utf-8", errors="ignore"):
+        if raw_secret == "REDACTED_SLACK_WEBHOOK_URL":
+            if "SLACK_WEBHOOK_URL" not in lines[line_number - 1]:
+                return False
+        elif raw_secret and raw_secret not in path.read_text(encoding="utf-8", errors="ignore"):
             return False
     return True
 
