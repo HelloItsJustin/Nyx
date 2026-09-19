@@ -54,6 +54,56 @@ start.ps1                Windows quick-start script for the dashboard and backen
 context.md               Implementation decisions and current verification state
 ```
 
+## Runtime boundaries
+
+Nyx is a local orchestration system. The CLI is the session entry point, the FastAPI service owns scan state and security-sensitive operations, and the React dashboard is an operator view over that local service.
+
+```text
+CLI session
+    | collects masked credentials and validates GitHub access
+    v
+FastAPI on 127.0.0.1
+    |-- REST: health, status, scans, evidence, reports, token validation
+    |-- WebSocket: phase events, findings, progress, and Proceed gates
+    |-- local workers: detection, graph analysis, sandbox, honey mesh, remediation
+    |-- external calls: GitHub, Gemini or Groq, TruffleHog, Docker
+    v
+React dashboard
+    | renders only redacted findings and operator-controlled phase state
+    v
+Operator decisions and reviewable remediation output
+```
+
+The backend exposes these primary integration points:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Confirm the local service is running and report its trust mode. |
+| `GET /api/status` | Read the current scan phase and most recent event. |
+| `GET /api/github/status` | Read the non-secret GitHub connection state. |
+| `POST /api/github/token` | Validate a session token without persisting it. |
+| `POST /api/scan` | Start a scan from a repository URL or uploaded archive. |
+| `POST /api/scan/proceed` | Release the next phase after explicit operator review. |
+| `POST /api/blast/evidence` | Return masked source evidence for a graph node or edge. |
+| `GET /api/report/pdf` | Generate a local PDF from redacted scan state. |
+| `POST /api/pr/create` | Create a narrowly scoped GitHub pull request after validation. |
+| `WS /ws` | Stream redacted phase events to the dashboard. |
+
+The exact request and response shapes are implemented in `backend/main.py`. The dashboard and CLI use the local endpoints directly, so there is no Nyx-hosted control plane or account service.
+
+## Data flow and trust boundaries
+
+1. The operator starts a session through the CLI or local dashboard.
+2. Session credentials are collected in memory. GitHub access is checked against the configured target repository before Auto-PR is enabled.
+3. Detection runs against a local repository copy. Raw findings remain inside the backend worker boundary.
+4. Public events, dashboard state, PDF data, and LLM prompts receive redacted finding data. Raw credential values are never part of a provider request.
+5. Blast-radius analysis resolves evidence from the scanned repository. It does not invent external dependency nodes when local evidence is absent.
+6. Phantom Runtime substitutes same-shape decoys, proves outbound access is blocked, and runs only inside a disposable Docker container.
+7. Remediation metadata is generated from redacted fields, then the operator reviews the exact proposed source-line change before Auto-PR.
+8. GitHub receives only the validated, narrowly scoped branch update and pull request metadata.
+
+This sequence makes the important security property explicit: the dashboard and providers are downstream consumers of sanitized data, never owners of the original credential values.
+
 ## Prerequisites
 
 - Python 3.11 or later
